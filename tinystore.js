@@ -1,27 +1,40 @@
 (function(global){
 
-  function TinyStore (name) {
-    this.version = '0.0.1';
+  function TinyStore (name, optionalStore) {
+    this.version = '0.0.2';
+    this.store = optionalStore || localStorage;
 
-    this.enabled = (function(){
-      try {
-        return 'localStorage' in window && window.localStorage !== null;
-      } catch (e) {
-        return false;
+    try {
+      if (this.store) {
+        if (this.store === localStorage) {
+          if ('localStorage' in window && window.localStorage) {
+            this.enabled = true;
+          }
+        } else if (this.store === sessionStorage) {
+          if ('sessionStorage' in window && window.sessionStorage) {
+            this.enabled = true;
+          }
+        } else {
+          this.enabled = true;
+        }
+      } else {
+        this.enabled = false;
       }
-    })();
+    } catch (err) {
+      this.enabled = false;
+    }
 
     this.session = {};
 
     if (this.enabled) {
       try {
-        this.session = JSON.parse(localStorage.getItem(name)) || {};
-      } catch (e) {}
+        this.session = JSON.parse(this.store[this.name]) || {};
+      } catch (err) {}
     }
 
     this.save = function () {
       if (this.enabled) {
-        localStorage.setItem(name, JSON.stringify(this.session));
+        this.store[this.name] = JSON.stringify(this.session);
       }
       return this.session;
     };
@@ -46,7 +59,7 @@
     this.clear = function () {
       this.session = {};
       if (this.enabled) {
-        localStorage.removeItem(name);
+        delete localStorage[this.name];
       }
     };
   }
